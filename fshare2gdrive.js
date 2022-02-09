@@ -19,13 +19,13 @@ const RED = '\x1b[31m%s\x1b[0m'
 const CYAN = '\x1b[36m%s\x1b[0m'
 
 // sniffed from fshare ios app
-const USER_AGENT = "Fshare/1 CFNetwork/1209 Darwin/20.2.0"
+const USER_AGENT = "fshare2gdrive-35WSIH"
 
 const FSHARE_LOGIN_PATH = '/api/user/login'
 const FSHARE_GET_USER_PATH = '/api/user/get'
 const FSHARE_DOWNLOAD_PATH = '/api/session/download'
 let fshare = {
-	'app_key': 'L2S7R6ZMagggC5wWkQhX2+aDi467PPuftWUMRFSn',
+	'app_key': 'dMnqMMZMUnN5YpvKENaEhdQQ5jxDqddt',
 	'user_email': '',
 	'password': ''
 }
@@ -196,11 +196,11 @@ async function transfer(fshare_file, remote_drive, remote_path) {
 		body = await request(options, JSON.stringify(data))
 		fshare_download_url = body.location
 		file_name = decodeURI(fshare_download_url.match(/http.+\/(.+?)$/)[1])
-		if (remote_drive === undefined) {
-			console.log(remote_drive)
+		if (remote_drive === undefined || remote_path === undefined) {
+			console.log(fshare_download_url)
 		} else {
-			rclone_path = `"${remote_drive}"`
-			transfer_cmd = `wget "${fshare_download_url}" -P "${rclone_path}"`
+			rclone_path = `"${remote_drive}":"${remote_path.replace(/\/$/,'')}/${file_name}"`
+			transfer_cmd = `curl -s "${fshare_download_url}" | rclone rcat --stats-one-line -P --stats 2s ${rclone_path}`
 			console.error(GREEN, `Uploading ${fshare_file} to rclone path ${rclone_path}. Please wait...`)
 			console.log(transfer_cmd)
 		}
@@ -221,7 +221,7 @@ async function genCmd(fshare_folder, remote_drive, remote_path, page=1, is_root_
 		const body = await request(options, false)
 		const promises = body.items.map(async item => {
 			if (item.type === 1) {
-				let cmd = `curl -s https://raw.githubusercontent.com/Nonmef/fshare2gdrive-colab/main/fshare2gdrive.js | tail -n+2 | node - "https://fshare.vn/file/${item.linkcode}" "${remote_drive}" "${remote_path.replace(/\/$/,'')}/${(is_root_folder ? body.current.name + '/' : '')}" | bash -s`
+				let cmd = `curl -s https://raw.githubusercontent.com/duythongle/fshare2gdrive/master/fshare2gdrive.js | tail -n+2 | node - "https://fshare.vn/file/${item.linkcode}" "${remote_drive}" "${remote_path.replace(/\/$/,'')}/${(is_root_folder ? body.current.name + '/' : '')}" | bash -s`
 				console.log(cmd)
 			}	else {
 				item_folder = `https://fshare.vn/folder/${item.linkcode}`
